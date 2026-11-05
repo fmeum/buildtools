@@ -15,82 +15,44 @@ limitations under the License.
 */
 
 // Package file provides utility file operations.
+//
+// All exported identifiers of this package forward to [github.com/bazel-contrib/buildtools/v10/file].
 package file
 
 import (
-	"fmt"
-	"io"
-	"os"
-	"path/filepath"
-	"runtime"
-
-	"github.com/bazelbuild/buildtools/wspace"
-	"github.com/google/safeopen"
+	"github.com/bazel-contrib/buildtools/v10/file"
 )
 
 // ReadFile can be updated from the caller to change the API
 // for reading a file.
-var ReadFile = readFile
+//
+// This is a copy of [github.com/bazel-contrib/buildtools/v10/file.ReadFile].
+// Assigning to it has no effect, assign to the v10 variable instead.
+var ReadFile = file.ReadFile
 
 // WriteFile can be updated from the caller to change the API
 // for writing a file.
-var WriteFile = writeFile
+//
+// This is a copy of [github.com/bazel-contrib/buildtools/v10/file.WriteFile].
+// Assigning to it has no effect, assign to the v10 variable instead.
+var WriteFile = file.WriteFile
 
 // WriteFileMode can be updated from the caller to change the API
 // for writing a file with a specific mode.
-var WriteFileMode = writeFileMode
+//
+// This is a copy of [github.com/bazel-contrib/buildtools/v10/file.WriteFileMode].
+// Assigning to it has no effect, assign to the v10 variable instead.
+var WriteFileMode = file.WriteFileMode
 
 // OpenReadFile can be updated from the caller to change the API
 // for opening a file.
-var OpenReadFile = openReadFile
+//
+// This is a copy of [github.com/bazel-contrib/buildtools/v10/file.OpenReadFile].
+// Assigning to it has no effect, assign to the v10 variable instead.
+var OpenReadFile = file.OpenReadFile
 
 // DisableSymlinkSafety disables symlink safety checks for WriteFile and WriteFileMode.
-var DisableSymlinkSafety bool
-
-// readFile is like os.ReadFile.
-func readFile(name string) ([]byte, os.FileInfo, error) {
-	fi, err := os.Stat(name)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	data, err := os.ReadFile(name)
-	return data, fi, err
-}
-
-// writeFile is like os.WriteFile.
-func writeFile(name string, data []byte) error {
-	return WriteFileMode(name, data, 0644)
-}
-
-// writeFile is like os.WriteFile.
-func writeFileMode(name string, data []byte, mode os.FileMode) error {
-	if DisableSymlinkSafety || runtime.GOOS != "linux" {
-		return os.WriteFile(name, data, mode)
-	}
-	// If we are in a workspace, we allow writes to any symlinked file within the workspace.
-	if wsRoot, _ := wspace.FindWorkspaceRoot(name); wsRoot != "" {
-		relPath, err := filepath.Rel(wsRoot, name)
-		if err != nil {
-			return err
-		}
-		return safeopen.WriteFileBeneath(wsRoot, relPath, data, mode)
-	}
-	dir, file := filepath.Split(name)
-	absDir, err := filepath.Abs(dir)
-	if err != nil {
-		return err
-	}
-	// If we are not in a workspace, we only allow writes to the directory where the file is located.
-	return safeopen.WriteFileBeneath(absDir, file, data, mode)
-}
-
-// openReadFile is like os.Open.
-func openReadFile(name string) io.ReadCloser {
-	f, err := os.Open(name)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Could not open %s\n", name)
-		os.Exit(1)
-	}
-	return f
-}
+//
+// This is a copy of [github.com/bazel-contrib/buildtools/v10/file.DisableSymlinkSafety].
+// Assigning to it has no effect, assign to the v10 variable instead.
+var DisableSymlinkSafety = file.DisableSymlinkSafety

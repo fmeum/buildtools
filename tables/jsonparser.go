@@ -14,51 +14,22 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// All exported identifiers of this package forward to [github.com/bazel-contrib/buildtools/v10/tables].
 package tables
 
 import (
-	"encoding/json"
-	"os"
+	"github.com/bazel-contrib/buildtools/v10/tables"
 )
 
-type Definitions struct {
-	IsLabelArg                      map[string]bool
-	LabelDenylist                   map[string]bool
-	IsListArg                       map[string]bool
-	IsSortableListArg               map[string]bool
-	SortableDenylist                map[string]bool
-	SortableAllowlist               map[string]bool
-	NamePriority                    map[string]int
-	StripLabelLeadingSlashes        bool
-	ShortenAbsoluteLabelsToRelative bool
-	AllowedSymbolLoadLocations      map[string][]string
-}
+type Definitions = tables.Definitions
 
 // ParseJSONDefinitions reads and parses JSON table definitions from file.
 func ParseJSONDefinitions(file string) (Definitions, error) {
-	var definitions Definitions
-
-	data, err := os.ReadFile(file)
-	if err != nil {
-		return definitions, err
-	}
-
-	err = json.Unmarshal(data, &definitions)
-	return definitions, err
+	return tables.ParseJSONDefinitions(file)
 }
 
 // ParseAndUpdateJSONDefinitions reads definitions from file and merges or
 // overrides the values in memory.
 func ParseAndUpdateJSONDefinitions(file string, merge bool) error {
-	definitions, err := ParseJSONDefinitions(file)
-	if err != nil {
-		return err
-	}
-
-	if merge {
-		MergeTables(definitions.IsLabelArg, definitions.LabelDenylist, definitions.IsListArg, definitions.IsSortableListArg, definitions.SortableDenylist, definitions.SortableAllowlist, definitions.NamePriority, definitions.StripLabelLeadingSlashes, definitions.ShortenAbsoluteLabelsToRelative, definitions.AllowedSymbolLoadLocations)
-	} else {
-		OverrideTables(definitions.IsLabelArg, definitions.LabelDenylist, definitions.IsListArg, definitions.IsSortableListArg, definitions.SortableDenylist, definitions.SortableAllowlist, definitions.NamePriority, definitions.StripLabelLeadingSlashes, definitions.ShortenAbsoluteLabelsToRelative, definitions.AllowedSymbolLoadLocations)
-	}
-	return nil
+	return tables.ParseAndUpdateJSONDefinitions(file, merge)
 }

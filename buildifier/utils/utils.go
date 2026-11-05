@@ -16,125 +16,28 @@ limitations under the License.
 
 // Package utils contains shared methods that can be used by different implementations of
 // buildifier binary
+//
+// All exported identifiers of this package forward to [github.com/bazel-contrib/buildtools/v10/buildifier/utils].
 package utils
 
 import (
-	"os"
-	"path/filepath"
-	"strings"
-
+	"github.com/bazel-contrib/buildtools/v10/buildifier/utils"
 	"github.com/bazelbuild/buildtools/build"
 	"github.com/bazelbuild/buildtools/warn"
 )
 
-func isStarlarkFile(name string) bool {
-	ext := filepath.Ext(name)
-	switch ext {
-	case ".bazel", ".BUILD", ".bzl", ".sky", ".star":
-		return true
-	}
-
-	switch ext {
-	case ".oss":
-		return strings.HasPrefix(name, "BUILD.") || strings.HasPrefix(name, "WORKSPACE.")
-	}
-
-	return name == "BUILD" || name == "WORKSPACE" || name == "WORKSPACE.bzlmod"
-}
-
-func skip(info os.FileInfo) bool {
-	return info.IsDir() && info.Name() == ".git"
-}
-
 // ExpandDirectories takes a list of file/directory names and returns a list with file names
 // by traversing each directory recursively and searching for relevant Starlark files.
 func ExpandDirectories(args *[]string) ([]string, error) {
-	files := []string{}
-	for _, arg := range *args {
-		info, err := os.Stat(arg)
-		if err != nil {
-			return []string{}, err
-		}
-		if !info.IsDir() {
-			files = append(files, arg)
-			continue
-		}
-		err = filepath.Walk(arg, func(path string, info os.FileInfo, err error) error {
-			if err != nil {
-				return err
-			}
-			if skip(info) {
-				return filepath.SkipDir
-			}
-			if !info.IsDir() && isStarlarkFile(info.Name()) {
-				// Don't traverse into directory symlinks such as bazel-foo.bzl
-				// for a project called foo.bzl.
-				if info.Mode()&os.ModeSymlink != 0 {
-					stat, err := os.Stat(path)
-					if err != nil || stat.IsDir() {
-						return nil
-					}
-				}
-				files = append(files, path)
-			}
-			return nil
-		})
-		if err != nil {
-			return []string{}, err
-		}
-	}
-	return files, nil
+	return utils.ExpandDirectories(args)
 }
 
 // GetParser returns a parser for a given file type
 func GetParser(inputType string) func(filename string, data []byte) (*build.File, error) {
-	switch inputType {
-	case "build":
-		return build.ParseBuild
-	case "bzl":
-		return build.ParseBzl
-	case "auto":
-		return build.Parse
-	case "workspace":
-		return build.ParseWorkspace
-	case "module":
-		return build.ParseModule
-	case "repo":
-		return build.ParseRepo
-	case "vendor":
-		return build.ParseVendor
-	default:
-		return build.ParseDefault
-	}
-}
-
-// getFileReader returns a *FileReader object that reads files from the local
-// filesystem if the workspace root is known.
-func getFileReader(workspaceRoot string) *warn.FileReader {
-	if workspaceRoot == "" {
-		return nil
-	}
-
-	readFile := func(filename string) ([]byte, error) {
-		// Use OS-specific path separators
-		filename = strings.ReplaceAll(filename, "/", string(os.PathSeparator))
-		path := filepath.Join(workspaceRoot, filename)
-
-		return os.ReadFile(path)
-	}
-
-	return warn.NewFileReader(readFile)
+	return utils.GetParser(inputType)
 }
 
 // Lint calls the linter and returns a list of unresolved findings
 func Lint(f *build.File, lint string, warningsList *[]string, verbose bool) []*warn.Finding {
-	fileReader := getFileReader(f.WorkspaceRoot)
-
-	switch lint {
-	case "warn":
-		return warn.FileWarnings(f, *warningsList, nil, warn.ModeWarn, fileReader)
-	case "fix":
-		warn.FixWarnings(f, *warningsList, verbose, fileReader)
-	}
-	return nil
+	return utils.Lint(f, lint, warningsList, verbose)
 }
